@@ -5,7 +5,7 @@ namespace dcAG\phpOptics;
 
 trait CanCreatedTypedFunctionsFromUntypedFunctions
 {
-    protected function createdTypedFunctionFromTemplate(Type|string $returnType, callable $abstractedCallable, Type|string ...$parameterTypes): callable
+    protected static function createdTypedFunctionFromTemplate(Type|string $returnType, callable $abstractedCallable, Type|string ...$parameterTypes): callable
     {
         $parameterString = "";
         $callableCallString = "";

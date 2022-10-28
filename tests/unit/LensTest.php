@@ -336,4 +336,32 @@ class LensTest extends TestCase
         $zippedLens = $this->innerLens->zipWith($this->outerLens);
     }
 
+    public function testCanCreateFromProperty()
+    {
+        $newLens = Lens::fromProperty(ExampleInnerData::class, 'someString');
+        $this->assertTrue(true);
+    }
+
+    public function testGetWithLensFromProperty()
+    {
+        $newLens = Lens::fromProperty(ExampleInnerData::class, 'someString');
+        $expected = $this->innerDataValueToReplace;
+        $actual = $newLens->get($this->innerDataToTest);
+        $this->assertEquals($expected, $actual);
+    }
+
+    public function testSetWithLensFromProperty()
+    {
+        $newLens = Lens::fromProperty(ExampleInnerData::class, 'someString');
+        $expected = $this->expectedInnerReplacement;
+        $actual = $newLens->update($this->innerDataToTest, $this->innerDataValueToReplaceWith);
+        $this->assertTrue($expected->equals($actual));
+    }
+
+    public function testCannotCreateLensWithNonExistentProperty()
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $newLens = Lens::fromProperty(ExampleInnerData::class, 'foo');
+    }
+
 }

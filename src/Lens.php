@@ -6,7 +6,12 @@ namespace dcAG\phpOptics;
 
 use Closure;
 use InvalidArgumentException;
+use ReflectionClass;
+use function class_exists;
 use function get_debug_type;
+use function interface_exists;
+use function is_string;
+use function property_exists;
 
 /**
  * @template I
@@ -44,13 +49,13 @@ class Lens
         callable $constructor
     ) {
         //validate fromTypeName is valid class-string
-        if (\class_exists($fromTypeName) === false && \interface_exists($fromTypeName) === false) {
+        if (class_exists($fromTypeName) === false && interface_exists($fromTypeName) === false) {
             throw new InvalidArgumentException("fromTypeName must be a class-string or interface-string.");
         }
         //validate toType is Type or valid class-string
-        if (\is_string($toType)) {
-            if (\class_exists($toType) === false && \interface_exists($toType) === false) {
-                throw new InvalidArgumentException("toType must be an instance of the Type-enum or a class-string or an interface-string.");
+        if (is_string($toType)) {
+            if (class_exists($toType) === false && interface_exists($toType) === false) {
+                throw new InvalidArgumentException("toType [$toType] must be an instance of the Type-enum or a class-string or an interface-string.");
             }
         }
         //check if getter has correct signature
@@ -113,8 +118,8 @@ class Lens
 
         $toTypeString = $other->toType instanceof Type ? $other->toType->value : $other->toType;
 
-        $typedGetterFn = $this->createdTypedFunctionFromTemplate($toTypeString, $getterFn, $this->fromTypeName);
-        $typedConstructorFn = $this->createdTypedFunctionFromTemplate($this->fromTypeName, $constructorFN, $this->fromTypeName, $toTypeString);
+        $typedGetterFn = self::createdTypedFunctionFromTemplate($toTypeString, $getterFn, $this->fromTypeName);
+        $typedConstructorFn = self::createdTypedFunctionFromTemplate($this->fromTypeName, $constructorFN, $this->fromTypeName, $toTypeString);
 
         return new Lens(
             $this->fromTypeName,
@@ -141,6 +146,65 @@ class Lens
         return new Lens(
             $this->fromTypeName,
             Type::ARRAY,
+            $typedGetterFn,
+            $typedConstructorFn
+        );
+    }
+
+    /**
+     * @template I2
+     * @template P2
+     * @param class-string<I2> $fromTypeName
+     * @param Type|class-string<P2> $propertyName
+     * @return Lens
+     */
+    public static function fromProperty(string $fromTypeName, string $propertyName): Lens
+    {
+        if (!class_exists($fromTypeName)) {
+            throw new InvalidArgumentException("fromTypeName must be a class-string.");
+        }
+
+        if (!property_exists($fromTypeName, $propertyName)) {
+            throw new InvalidArgumentException("propertyName must be a property of fromTypeName.");
+        }
+
+        //Get property type via reflection
+        $reflection = new ReflectionClass($fromTypeName);
+        $property = $reflection->getProperty($propertyName);
+        $propertyType = $property->getType();
+
+        if ($propertyType === null) {
+            throw new InvalidArgumentException("Property [$propertyName] in class [$fromTypeName] must have a type.");
+        }
+        $propertyTypeString = $propertyType->getName();
+
+        $getterFn = fn($from) => $from->$propertyName;
+        $constructorFn = function($from, $replacement) use ($reflection, $property) {
+            $newInstance = $reflection->newInstanceWithoutConstructor();
+            $props = $reflection->getProperties();
+            $replacedPropertyName = $property->getName();
+            foreach ($props as $prop) {
+                $currName = $prop->getName();
+                $prop->setAccessible(true);
+                if ($currName === $replacedPropertyName) {
+                    $prop->setValue($newInstance, $replacement);
+                } else {
+                    $prop->setValue($newInstance, $prop->getValue($from));
+                }
+
+            }
+            return $newInstance;
+        };
+
+        $typedGetterFn = self::createdTypedFunctionFromTemplate($propertyTypeString, $getterFn, $fromTypeName);
+        $typedConstructorFn = self::createdTypedFunctionFromTemplate($fromTypeName, $constructorFn, $fromTypeName, $propertyTypeString);
+
+        $typeInstance = Type::tryFrom($propertyTypeString);
+        $propertyTypeArgument = $typeInstance ?? $propertyTypeString;
+
+        return new Lens(
+            $fromTypeName,
+            $propertyTypeArgument,
             $typedGetterFn,
             $typedConstructorFn
         );
