@@ -92,7 +92,6 @@ class Lens
             throw new InvalidArgumentException("in must be an instance of \"fromTypeName\".");
         }
         if ($this->toType instanceof Type) {
-            //$toTypeName = Type::gettypeEquivalent($this->toType);
             $actualType = get_debug_type($replacement);
             if ($this->toType->value !== $actualType) {
                 throw new InvalidArgumentException("replacement must be of type [{$this->toType->value}] - got [$actualType].");
