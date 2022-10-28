@@ -1,0 +1,17 @@
+{
+  "name": "dcag/php-optics",
+  "minimum-stability": "beta",
+  "require": {
+    "php": ">=8.1.0"
+  },
+    "require-dev": {
+        "phpunit/phpunit": "^9.5",
+        "phpstan/phpstan": "^1.8.1"
+    },
+  "autoload": {
+    "psr-4": {
+      "dcAG\\phpOptics\\": "src/",
+      "dcAg\\phpOptics\\tests\\": "tests/"
+    }
+  }
+}
