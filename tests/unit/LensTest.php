@@ -36,13 +36,13 @@ class LensTest extends TestCase
     public function testConstruct()
     {
 
-        $this->createAndSetLenses();
+        $this->createAndUpdateLenses();
         $this->assertTrue(true);
     }
 
     public function testUpdate()
     {
-        $this->createAndSetLenses();
+        $this->createAndUpdateLenses();
         $actualInner = $this->innerLens->update($this->innerDataToTest, $this->innerDataValueToReplaceWith);
         $this->assertTrue($this->expectedInnerReplacement->equals($actualInner));
         $actualOuter = $this->outerLens->update($this->outerDataToTest, $this->expectedInnerReplacement);
@@ -51,16 +51,16 @@ class LensTest extends TestCase
 
     public function testGet()
     {
-        $this->createAndSetLenses();
+        $this->createAndUpdateLenses();
         $actualInner = $this->innerLens->get($this->innerDataToTest);
         $this->assertEquals($this->innerDataValueToReplace, $actualInner);
         $actualOuter = $this->outerLens->get($this->outerDataToTest);
         $this->assertTrue($this->innerDataToTest->equals($actualOuter));
     }
 
-    public function testGetAfterSet()
+    public function testGetAfterUpdate()
     {
-        $this->createAndSetLenses();
+        $this->createAndUpdateLenses();
         $newInner = $this->innerLens->update($this->innerDataToTest, $this->innerDataValueToReplaceWith);
         $newOuter = $this->outerLens->update($this->outerDataToTest, $newInner);
         $queriedNewInner = $this->outerLens->get($newOuter);
@@ -70,22 +70,22 @@ class LensTest extends TestCase
 
     public function testCompose()
     {
-        $this->createAndSetLenses();
+        $this->createAndUpdateLenses();
         $this->compositLens = $this->outerLens->compose($this->innerLens);
         $this->assertTrue(true);
     }
 
     public function testComposedGet()
     {
-        $this->createAndSetLenses();
+        $this->createAndUpdateLenses();
         $this->compositLens = $this->outerLens->compose($this->innerLens);
         $actual = $this->compositLens->get($this->outerDataToTest);
         $this->assertEquals($this->innerDataValueToReplace, $actual);
     }
 
-    public function testComposedSet()
+    public function testComposedUpdate()
     {
-        $this->createAndSetLenses();
+        $this->createAndUpdateLenses();
         $this->compositLens = $this->outerLens->compose($this->innerLens);
         $actual = $this->compositLens->update($this->outerDataToTest, $this->innerDataValueToReplaceWith);
         $this->assertTrue($this->expectedOuterReplacement->equals($actual));
@@ -94,7 +94,7 @@ class LensTest extends TestCase
     /**
      * @return void
      */
-    protected function createAndSetLenses(): void
+    protected function createAndUpdateLenses(): void
     {
         if (null === $this->innerLens) {
             $this->innerLens = new Lens(
@@ -123,7 +123,7 @@ class LensTest extends TestCase
 
     public function testCannotComposeWrongTypes()
     {
-        $this->createAndSetLenses();
+        $this->createAndUpdateLenses();
         $this->expectException(\InvalidArgumentException::class);
         $this->compositLens = $this->innerLens->compose($this->outerLens);
     }
@@ -280,7 +280,7 @@ class LensTest extends TestCase
 
     public function testGetFromZipped()
     {
-        $this->createAndSetLenses();
+        $this->createAndUpdateLenses();
         $innerLens2 = new Lens(
             ExampleInnerData::class,
             Type::INT,
@@ -303,9 +303,9 @@ class LensTest extends TestCase
         );
     }
 
-    public function testSetViaZipped()
+    public function testUpdateViaZipped()
     {
-        $this->createAndSetLenses();
+        $this->createAndUpdateLenses();
         $innerLens2 = new Lens(
             ExampleInnerData::class,
             Type::INT,
@@ -332,7 +332,7 @@ class LensTest extends TestCase
     public function testCannotZipForWrongTypes()
     {
         $this->expectException(\InvalidArgumentException::class);
-        $this->createAndSetLenses();
+        $this->createAndUpdateLenses();
         $zippedLens = $this->innerLens->zipWith($this->outerLens);
     }
 
@@ -350,7 +350,7 @@ class LensTest extends TestCase
         $this->assertEquals($expected, $actual);
     }
 
-    public function testSetWithLensFromProperty()
+    public function testUpdateWithLensFromProperty()
     {
         $newLens = Lens::fromProperty(ExampleInnerData::class, 'someString');
         $expected = $this->expectedInnerReplacement;
